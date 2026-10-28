@@ -1,0 +1,103 @@
+{
+  "Comment": "Re-parseia HTML já salvo no S3 e atualiza o DynamoDB sem baixar nada de novo",
+  "StartAt": "ListRaw",
+  "States": {
+    "ListRaw": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_raw_arn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "source.$": "$.Payload.source",
+        "prefix.$": "$.Payload.prefix",
+        "keys.$": "$.Payload.keys"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.TooManyRequestsException", "Lambda.SdkClientException", "States.Timeout"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Reparse"
+    },
+    "Reparse": {
+      "Type": "Map",
+      "ItemsPath": "$.keys",
+      "MaxConcurrency": 5,
+      "ItemSelector": {
+        "source.$": "$.source",
+        "key.$": "$$.Map.Item.Value"
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "ReparseOne",
+        "States": {
+          "ReparseOne": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "${reparse_arn}",
+              "Payload.$": "$"
+            },
+            "OutputPath": "$.Payload",
+            "Retry": [
+              {
+                "ErrorEquals": ["Lambda.ServiceException", "Lambda.TooManyRequestsException", "Lambda.SdkClientException", "States.Timeout"],
+                "IntervalSeconds": 1,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["States.ALL"],
+                "ResultPath": "$.failure",
+                "Next": "MarkError"
+              }
+            ],
+            "End": true
+          },
+          "MarkError": {
+            "Type": "Pass",
+            "Parameters": {
+              "key.$": "$.key",
+              "status": "error",
+              "error.$": "$.failure.Error"
+            },
+            "End": true
+          }
+        }
+      },
+      "ResultPath": "$.results",
+      "Next": "Summary"
+    },
+    "Summary": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${summary_arn}",
+        "Payload": {
+          "source.$": "$.source",
+          "prefix.$": "$.prefix",
+          "results.$": "$.results"
+        }
+      },
+      "OutputPath": "$.Payload",
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.TooManyRequestsException", "Lambda.SdkClientException"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
+    }
+  }
+}

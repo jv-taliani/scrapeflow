@@ -2,6 +2,9 @@ locals {
   functions = {
     producer = { handler = "scraper.handlers.producer.handler", timeout = 10 }
     worker   = { handler = "scraper.handlers.worker.handler", timeout = local.worker_timeout }
+    list_raw = { handler = "scraper.handlers.list_raw.handler", timeout = 10 }
+    reparse  = { handler = "scraper.handlers.reparse.handler", timeout = 10 }
+    summary  = { handler = "scraper.handlers.summary.handler", timeout = 10 }
   }
 
   lambda_env = {

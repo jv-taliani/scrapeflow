@@ -34,6 +34,16 @@ locals {
         resources = [aws_dynamodb_table.seen.arn]
       },
     ]
+    list_raw = [
+      {
+        actions   = ["s3:ListBucket"]
+        resources = [aws_s3_bucket.raw.arn]
+      },
+    ]
+    reparse = [
+      { actions = ["s3:GetObject"], resources = ["${aws_s3_bucket.raw.arn}/raw/*"] },
+      { actions = ["dynamodb:PutItem"], resources = [aws_dynamodb_table.items.arn] },
+    ]
   }
 }
 

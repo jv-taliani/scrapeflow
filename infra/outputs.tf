@@ -21,3 +21,7 @@ output "dlq_urls" {
 output "functions" {
   value = { for k, f in aws_lambda_function.fn : k => f.function_name }
 }
+
+output "reprocess_state_machine" {
+  value = aws_sfn_state_machine.reprocess.arn
+}
