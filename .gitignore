@@ -15,5 +15,6 @@ infra/.terraform/
 infra/.terraform.lock.hcl
 infra/*.tfstate
 infra/*.tfstate.*
+infra/terraform.tfstate.d/
 infra/envs/aws.tfvars
 localstack-data/
