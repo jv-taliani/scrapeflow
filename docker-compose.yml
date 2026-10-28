@@ -10,7 +10,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:4566/_localstack/health')
       interval: 5s
       timeout: 3s
       retries: 30
@@ -20,6 +24,9 @@ services:
       context: .
       dockerfile: selenium_worker/Dockerfile
     profiles: ["js"]
+    command: ${SELENIUM_WORKER_ARGS:-}
+    stop_grace_period: 30s
+    shm_size: 1gb
     depends_on:
       localstack:
         condition: service_healthy
@@ -33,3 +40,5 @@ services:
       SCRAPER_SEEN_TABLE: scraper-seen
       SCRAPER_QUEUE_URL: http://localstack:4566/000000000000/scraper-urls
       SCRAPER_JS_QUEUE_URL: http://localstack:4566/000000000000/scraper-urls-js
+      MAX_DEPTH: 10
+      MAX_PAGES: 50
