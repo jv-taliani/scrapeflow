@@ -1,0 +1,35 @@
+services:
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:?defina LOCALSTACK_AUTH_TOKEN no .env}
+      SERVICES: s3,s3control,sqs,dynamodb,lambda,stepfunctions,iam,logs,sts,budgets
+      LAMBDA_RUNTIME_ENVIRONMENT_TIMEOUT: 60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  selenium-worker:
+    build:
+      context: .
+      dockerfile: selenium_worker/Dockerfile
+    profiles: ["js"]
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      SCRAPER_BUCKET: ${SCRAPER_BUCKET:-scraper-raw-local}
+      SCRAPER_ITEMS_TABLE: scraper-items
+      SCRAPER_SEEN_TABLE: scraper-seen
+      SCRAPER_QUEUE_URL: http://localstack:4566/000000000000/scraper-urls
+      SCRAPER_JS_QUEUE_URL: http://localstack:4566/000000000000/scraper-urls-js
