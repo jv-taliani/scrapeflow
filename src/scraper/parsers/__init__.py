@@ -19,6 +19,6 @@ def sources() -> list[str]:
     return sorted(_REGISTRY)
 
 
-from scraper.parsers import books  # noqa: E402
+from scraper.parsers import books, quotes_js  # noqa: E402
 
-__all__ = ["ParseResult", "Parser", "books", "get_parser", "register", "sources"]
+__all__ = ["ParseResult", "Parser", "books", "get_parser", "quotes_js", "register", "sources"]

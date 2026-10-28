@@ -15,6 +15,7 @@ class Parser(ABC):
     source: ClassVar[str]
     seeds: ClassVar[tuple[str, ...]]
     requires_js: ClassVar[bool] = False
+    wait_for: ClassVar[str | None] = None
 
     @abstractmethod
     def parse(self, html: str, task: CrawlTask) -> ParseResult: ...
