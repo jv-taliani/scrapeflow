@@ -1,0 +1,6 @@
+environment      = "aws"
+region           = "us-east-1"
+alert_email      = "voce@exemplo.com"
+budget_limit_usd = "1"
+max_depth        = 2
+max_pages        = 30
