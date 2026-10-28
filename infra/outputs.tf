@@ -25,3 +25,7 @@ output "functions" {
 output "reprocess_state_machine" {
   value = aws_sfn_state_machine.reprocess.arn
 }
+
+output "budget" {
+  value = one(aws_budgets_budget.monthly[*].name)
+}
