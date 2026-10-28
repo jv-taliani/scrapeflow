@@ -12,11 +12,19 @@ PRODUCER = os.environ.get("SCRAPER_PRODUCER_FUNCTION", "scraper-producer")
 STATE_MACHINE = os.environ.get("SCRAPER_STATE_MACHINE", "scraper-reprocess")
 
 
+def _bucket(settings: Settings) -> str:
+    if os.environ.get("SCRAPER_BUCKET"):
+        return settings.bucket
+    names = [b["Name"] for b in aws.s3(settings).list_buckets().get("Buckets", [])]
+    return next((n for n in names if n.startswith("scraper-raw-")), settings.bucket)
+
+
 def _resolve(settings: Settings) -> Settings:
     sqs = aws.sqs(settings)
     return Settings(
         **{
             **settings.__dict__,
+            "bucket": _bucket(settings),
             "queue_url": settings.queue_url
             or sqs.get_queue_url(QueueName="scraper-urls")["QueueUrl"],
             "js_queue_url": settings.js_queue_url
