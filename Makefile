@@ -4,6 +4,7 @@ TFLOCAL ?= $(CURDIR)/.venv/bin/tflocal
 ENDPOINT ?= http://localhost:4566
 SOURCE ?= books
 RUN_ID ?=
+LIMIT ?= 20
 ENV ?= local
 LOCAL_AWS := AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1 AWS_ENDPOINT_URL=$(ENDPOINT)
 ifeq ($(ENV),aws)
@@ -13,7 +14,7 @@ AWSL := $(LOCAL_AWS)
 endif
 TF_LOCAL := cd infra && $(LOCAL_AWS) "$(CURDIR)/$(PY)" "$(TFLOCAL)"
 
-.PHONY: up build deploy-local crawl crawl-js reprocess inspect test test-int lint deploy-aws destroy-aws down
+.PHONY: up build deploy-local crawl crawl-js reprocess inspect items test test-int lint deploy-aws destroy-aws down
 
 up:
 	docker compose up -d localstack
@@ -39,6 +40,9 @@ reprocess:
 
 inspect:
 	$(AWSL) $(PY) -m scraper.cli inspect
+
+items:
+	@$(AWSL) $(PY) -m scraper.cli items --source $(SOURCE) --limit $(LIMIT)
 
 test:
 	$(PY) -m pytest tests/unit --cov=scraper --cov-report=term-missing

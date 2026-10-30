@@ -92,6 +92,32 @@ def inspect(settings: Settings) -> dict[str, Any]:
     return {"items": counts, "raw_objects": objects, "queues": queues}
 
 
+def items(settings: Settings, source: str, limit: int) -> None:
+    table = aws.dynamodb(settings).Table(settings.items_table)
+    rows: list[dict[str, Any]] = []
+    kwargs: dict[str, Any] = {}
+    while True:
+        page = table.scan(**kwargs)
+        rows.extend(
+            r
+            for r in page["Items"]
+            if r["sk"] == "v#latest" and str(r["pk"]).startswith(f"{source}#")
+        )
+        if "LastEvaluatedKey" not in page:
+            break
+        kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
+    rows.sort(key=lambda r: str(r.get("title") or r.get("author")))
+    for r in rows[:limit]:
+        if "price" in r:
+            print(
+                f"{r['currency']} {r['price']:>6}  estoque {r['availability']:>3}  "
+                f"nota {r['rating']}  {r.get('category', '-'):<20.20}  {str(r['title'])[:50]}"
+            )
+        else:
+            print(f"{str(r['author'])[:25]:<25}  {str(r['text'])[:80]}")
+    print(f"\n{min(limit, len(rows))} de {len(rows)} itens de {source}")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="scraper")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -100,8 +126,14 @@ def main(argv: list[str] | None = None) -> None:
     rep.add_argument("--source", required=True)
     rep.add_argument("--run-id", default="")
     sub.add_parser("inspect")
+    list_items = sub.add_parser("items")
+    list_items.add_argument("--source", required=True)
+    list_items.add_argument("--limit", type=int, default=20)
     args = parser.parse_args(argv)
     settings = Settings.from_env()
+    if args.cmd == "items":
+        items(settings, args.source, args.limit)
+        return
     if args.cmd == "crawl":
         result = crawl(settings, args.source)
     elif args.cmd == "reprocess":
