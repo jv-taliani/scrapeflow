@@ -222,7 +222,9 @@ Saída de `make reprocess` com uma página corrompida no meio:
 }
 ```
 
-> *Print/GIF da execução da Step Function: adicionar em `docs/stepfunctions.png`.*
+Resumo de uma execução real da Step Function, gerado a partir do histórico da execução no LocalStack:
+
+![Execução do Step Functions](docs/stepfunctions.png)
 
 ## Limitações e próximos passos
 
